@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Superfight Vocabulary Review</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div>
+          <p class="eyebrow">Vocabulary Battle</p>
+          <h1>Superfight Review</h1>
+        </div>
+        <nav class="step-list" aria-label="Game steps">
+          <button class="step-tab active" data-step="0">
+            <span>1</span>
+            Input Words
+          </button>
+          <button class="step-tab" data-step="1" disabled>
+            <span>2</span>
+            Complete Cards
+          </button>
+          <button class="step-tab" data-step="2" disabled>
+            <span>3</span>
+            Create Fighter
+          </button>
+          <button class="step-tab" data-step="3" disabled>
+            <span>4</span>
+            Analyse Opponent
+          </button>
+          <button class="step-tab" data-step="4" disabled>
+            <span>5</span>
+            Fight
+          </button>
+        </nav>
+        <div class="progress-card">
+          <p class="muted">Current opponent</p>
+          <strong id="opponentProgress">Not started</strong>
+        </div>
+      </aside>
+
+      <main>
+        <section class="topbar">
+          <div>
+            <p class="muted" id="stepKicker">Step 1</p>
+            <h2 id="stepTitle">Input target words</h2>
+          </div>
+          <button class="ghost" id="openStepHelp" type="button">Step settings</button>
+        </section>
+
+        <section class="panel step-panel active" data-panel="0">
+          <div class="section-head">
+            <div>
+              <h3>Target Words</h3>
+              <p>Enter one target vocabulary word per line, or separate words with commas.</p>
+            </div>
+            <button id="sampleWords" type="button">Load sample</button>
+          </div>
+          <textarea id="targetWords" rows="10" placeholder="hero&#10;invisible&#10;gravity&#10;strategy&#10;weakness"></textarea>
+          <div class="actions">
+            <button id="generateTable" type="button">Generate card table</button>
+          </div>
+        </section>
+
+        <section class="panel step-panel" data-panel="1">
+          <div class="section-head">
+            <div>
+              <h3>Custom Card Table</h3>
+              <p>Fill the English and Chinese card content. Target word English is filled automatically.</p>
+            </div>
+            <button class="ghost" id="clearTable" type="button">Clear editable cards</button>
+          </div>
+          <div class="table-wrap">
+            <table id="cardTable">
+              <thead>
+                <tr>
+                  <th>Target Word EN</th>
+                  <th>Target Word 中文</th>
+                  <th>Character EN</th>
+                  <th>Character 中文</th>
+                  <th>Positive Attribute EN</th>
+                  <th>Positive Attribute 中文</th>
+                  <th>Negative Attribute EN</th>
+                  <th>Negative Attribute 中文</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div class="actions">
+            <button id="saveCards" type="button">Save cards and continue</button>
+          </div>
+        </section>
+
+        <section class="panel step-panel" data-panel="2">
+          <div class="section-head">
+            <div>
+              <h3>Create Fighter</h3>
+              <p>For each card type, draw a small hand and pick one card for your fighter.</p>
+            </div>
+            <button class="ghost" id="reshuffleHands" type="button">Draw new hands</button>
+          </div>
+          <div class="fighter-grid" id="fighterPicker"></div>
+          <div class="actions">
+            <button id="confirmFighter" type="button">Confirm fighter and generate opponents</button>
+          </div>
+        </section>
+
+        <section class="panel step-panel" data-panel="3">
+          <div class="battle-layout">
+            <div class="fighter-summary">
+              <h3>Your Fighter</h3>
+              <div id="playerFighter" class="card-stack"></div>
+            </div>
+            <div class="fighter-summary">
+              <h3 id="opponentName">Opponent</h3>
+              <div id="opponentFighter" class="card-stack"></div>
+            </div>
+          </div>
+          <div class="section-head compact">
+            <div>
+              <h3>Earn Dice</h3>
+              <p id="translationModeLabel">Mark each successful translation to add one die.</p>
+            </div>
+            <div class="dice-pill"><span id="earnedDice">0</span> dice</div>
+          </div>
+          <div id="translationChecks" class="check-list"></div>
+          <label class="field-row">
+            Advantage explanation score
+            <select id="advantageDice">
+              <option value="0">No dice</option>
+              <option value="1">1 die</option>
+              <option value="2">2 dice</option>
+              <option value="3">3 dice</option>
+            </select>
+          </label>
+          <div class="actions">
+            <button id="goFight" type="button">Roll fight dice</button>
+          </div>
+        </section>
+
+        <section class="panel step-panel" data-panel="4">
+          <div class="fight-board">
+            <div>
+              <p class="muted">Roll target</p>
+              <strong class="target-score">11+</strong>
+            </div>
+            <div>
+              <p class="muted">Dice available</p>
+              <strong id="fightDiceCount">0</strong>
+            </div>
+            <div>
+              <p class="muted">Roll total</p>
+              <strong id="rollTotal">Not rolled</strong>
+            </div>
+          </div>
+          <div id="diceResults" class="dice-results"></div>
+          <div id="compensationArea" class="compensation hidden">
+            <div class="section-head compact">
+              <div>
+                <h3>Compensate Missing Points</h3>
+                <p id="missingPointsText"></p>
+              </div>
+              <div class="timer" id="timerDisplay">Untimed</div>
+            </div>
+            <div id="compensationTasks" class="check-list"></div>
+          </div>
+          <div class="actions">
+            <button id="rollDice" type="button">Roll dice</button>
+            <button id="finishOpponent" type="button" disabled>Finish opponent</button>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <dialog id="stepModal">
+      <form method="dialog" class="modal-card">
+        <div>
+          <p class="eyebrow" id="modalStep">Step</p>
+          <h2 id="modalTitle">Step title</h2>
+          <p id="modalDescription"></p>
+        </div>
+        <div id="modalSettings" class="modal-settings"></div>
+        <div class="actions">
+          <button class="ghost" value="cancel" type="button" id="closeModal">Close</button>
+          <button value="default" type="submit">Save preferences</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="app.js"></script>
+  </body>
+</html>

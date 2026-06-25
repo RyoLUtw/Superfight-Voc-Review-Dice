@@ -1,0 +1,474 @@
+:root {
+  --bg: #f6f7f9;
+  --panel: #ffffff;
+  --ink: #18212f;
+  --muted: #687385;
+  --line: #d9dee7;
+  --accent: #146c5f;
+  --accent-dark: #0c4f46;
+  --warning: #a64818;
+  --danger: #a52727;
+  --shadow: 0 18px 42px rgba(18, 28, 45, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  min-height: 42px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  padding: 0 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  background: var(--accent-dark);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.ghost {
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+}
+
+.ghost:hover:not(:disabled) {
+  background: #eef2f5;
+}
+
+.app-shell {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  border-right: 1px solid var(--line);
+  background: #111c25;
+  color: #fff;
+  padding: 28px 22px;
+}
+
+.sidebar h1 {
+  margin: 4px 0 0;
+  font-size: 30px;
+  line-height: 1.05;
+}
+
+.eyebrow,
+.muted {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.sidebar .eyebrow,
+.sidebar .muted {
+  color: #aab5c2;
+}
+
+.step-list {
+  display: grid;
+  gap: 10px;
+}
+
+.step-tab {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: #eaf0f4;
+}
+
+.step-tab.active {
+  border-color: #6fd0bd;
+  background: #173c3a;
+}
+
+.step-tab span {
+  display: inline-grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.progress-card {
+  margin-top: auto;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+main {
+  min-width: 0;
+  padding: 28px;
+}
+
+.topbar,
+.section-head,
+.actions,
+.battle-layout,
+.fight-board {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.topbar {
+  margin-bottom: 22px;
+}
+
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+
+h2 {
+  margin-bottom: 0;
+  font-size: 30px;
+}
+
+h3 {
+  margin-bottom: 4px;
+  font-size: 20px;
+}
+
+.panel {
+  display: none;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  padding: 22px;
+}
+
+.panel.active {
+  display: block;
+}
+
+textarea,
+input,
+select {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink);
+  padding: 10px 12px;
+}
+
+textarea {
+  margin-top: 18px;
+  resize: vertical;
+}
+
+.actions {
+  justify-content: flex-end;
+  margin-top: 18px;
+}
+
+.table-wrap {
+  width: 100%;
+  margin-top: 18px;
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  min-width: 1120px;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  border: 1px solid var(--line);
+  padding: 8px;
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  background: #eef2f5;
+  font-size: 13px;
+}
+
+td input {
+  min-width: 120px;
+  border: 0;
+  padding: 6px;
+}
+
+td input[readonly] {
+  background: #f2f6f5;
+  font-weight: 700;
+}
+
+.fighter-grid,
+.card-stack,
+.check-list,
+.dice-results {
+  display: grid;
+  gap: 12px;
+}
+
+.fighter-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: 18px;
+}
+
+.pick-column,
+.card-item,
+.check-item,
+.die,
+.compensation {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfd;
+}
+
+.pick-column {
+  padding: 14px;
+}
+
+.pick-column h4 {
+  margin: 0 0 10px;
+}
+
+.choice {
+  display: grid;
+  gap: 5px;
+  width: 100%;
+  min-height: 92px;
+  margin-bottom: 10px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  text-align: left;
+  font-weight: 600;
+}
+
+.choice.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(20, 108, 95, 0.16);
+}
+
+.choice small,
+.card-item small {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.battle-layout {
+  align-items: stretch;
+  margin-bottom: 22px;
+}
+
+.fighter-summary {
+  flex: 1;
+  min-width: 0;
+}
+
+.card-item {
+  padding: 12px;
+}
+
+.card-item strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.compact {
+  margin-top: 10px;
+}
+
+.dice-pill,
+.timer {
+  border-radius: 999px;
+  background: #e8f5f1;
+  color: var(--accent-dark);
+  padding: 8px 14px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.check-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+}
+
+.check-item input {
+  width: 22px;
+  height: 22px;
+}
+
+.field-row {
+  display: grid;
+  gap: 8px;
+  max-width: 360px;
+  margin-top: 16px;
+  font-weight: 700;
+}
+
+.fight-board {
+  align-items: stretch;
+  margin-bottom: 18px;
+}
+
+.fight-board > div {
+  flex: 1;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+  background: #fbfcfd;
+}
+
+.fight-board strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 30px;
+}
+
+.target-score {
+  color: var(--accent-dark);
+}
+
+.dice-results {
+  grid-template-columns: repeat(auto-fit, minmax(58px, 1fr));
+  margin-bottom: 18px;
+}
+
+.die {
+  display: grid;
+  min-height: 58px;
+  place-items: center;
+  background: #fff;
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.compensation {
+  padding: 14px;
+}
+
+.hidden {
+  display: none;
+}
+
+dialog {
+  width: min(620px, calc(100vw - 28px));
+  border: 0;
+  border-radius: 10px;
+  padding: 0;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.25);
+}
+
+dialog::backdrop {
+  background: rgba(17, 28, 37, 0.54);
+}
+
+.modal-card {
+  padding: 24px;
+}
+
+.modal-card h2 {
+  margin: 2px 0 10px;
+}
+
+.modal-settings {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.setting-row {
+  display: grid;
+  grid-template-columns: 1fr minmax(150px, 220px);
+  gap: 14px;
+  align-items: center;
+}
+
+.setting-row label {
+  font-weight: 700;
+}
+
+@media (max-width: 920px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: static;
+  }
+
+  .step-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .fighter-grid,
+  .battle-layout,
+  .fight-board,
+  .topbar,
+  .section-head {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  main,
+  .sidebar {
+    padding: 18px;
+  }
+
+  .step-list {
+    grid-template-columns: 1fr;
+  }
+
+  h2 {
+    font-size: 24px;
+  }
+
+  .setting-row,
+  .check-item {
+    grid-template-columns: 1fr;
+  }
+}
