@@ -139,6 +139,7 @@ const state = {
   hands: {},
   picks: {},
   fighterTranslationCorrect: {},
+  skipFighterPracticeModalOnce: false,
   translationSuccess: {},
   advantageDice: 0,
   earnedDice: 0,
@@ -231,9 +232,16 @@ function setStep(stepIndex, showModal = true) {
   updateRollTargetDisplay();
   updateOpponentProgress();
   if (showModal) {
-    if (stepIndex === 3 && pref(2, "cardContentLanguage") === "zh" && hasUnsuccessfulFighterTranslations()) {
+    const shouldShowFighterPractice =
+      stepIndex === 3 &&
+      pref(2, "cardContentLanguage") === "zh" &&
+      hasUnsuccessfulFighterTranslations() &&
+      !state.skipFighterPracticeModalOnce;
+
+    if (shouldShowFighterPractice) {
       showFighterTranslationModal();
     } else {
+      state.skipFighterPracticeModalOnce = false;
       openStepModal(stepIndex);
     }
   }
@@ -540,11 +548,10 @@ function continueAfterFighterTranslation() {
   if (els.fighterTranslationModal.open) {
     els.fighterTranslationModal.close();
   }
-  if (state.step === 3 && hasUnsuccessfulFighterTranslations()) {
-    showFighterTranslationModal();
-    return;
+  state.skipFighterPracticeModalOnce = true;
+  if (state.step !== 3) {
+    startOpponent();
   }
-  startOpponent();
   setStep(3);
 }
 
