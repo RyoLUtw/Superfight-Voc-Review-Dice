@@ -1,9 +1,11 @@
-const CARD_TYPES = [
+﻿const ALL_CARD_TYPES = [
   { key: "target", label: "Target Word" },
   { key: "character", label: "Character" },
   { key: "positive", label: "Positive Attribute" },
   { key: "negative", label: "Negative Attribute" },
 ];
+
+const FIGHTER_CARD_TYPES = ALL_CARD_TYPES.filter(({ key }) => key !== "target");
 
 const STEP_META = [
   {
@@ -21,7 +23,7 @@ const STEP_META = [
   {
     title: "Create fighter",
     description:
-      "Set how many cards appear in each draw hand. Pick one card per type to build your fighter.",
+      "Set how many cards appear in each draw hand. Pick one character, one positive attribute, and one negative attribute to build your fighter.",
     settings: [
       {
         key: "handSize",
@@ -31,12 +33,22 @@ const STEP_META = [
         max: 12,
         defaultValue: 3,
       },
+      {
+        key: "cardContentLanguage",
+        label: "Card content language",
+        type: "select",
+        options: [
+          ["en", "English"],
+          ["zh", "Chinese"],
+        ],
+        defaultValue: "en",
+      },
     ],
   },
   {
     title: "Analyse opponent",
     description:
-      "Translate card content to earn dice, then score the advantage explanation from 1 to 3 dice.",
+      "Translate card content to earn dice, then add one extra die for a successful advantage explanation.",
     settings: [
       {
         key: "translationDirection",
@@ -53,7 +65,7 @@ const STEP_META = [
   {
     title: "Fight opponent",
     description:
-      "Roll earned dice. A total of 11 or more defeats the opponent. Missing points can be compensated with extra vocabulary translations.",
+      "Roll earned dice. Meet or beat the roll target to defeat the opponent. Missing points can be compensated with extra vocabulary translations.",
     settings: [
       {
         key: "timedCompensation",
@@ -73,10 +85,50 @@ const STEP_META = [
         max: 600,
         defaultValue: 60,
       },
+      {
+        key: "rollTarget",
+        label: "Roll target",
+        type: "range",
+        min: 9,
+        max: 20,
+        defaultValue: 11,
+      },
     ],
   },
 ];
 
+const SAMPLE_ROWS = {
+  brave: {
+    target: { zh: "\u52c7\u6562\u7684" },
+    character: { en: "a knight with a cracked shield", zh: "\u62ff\u8457\u88c2\u958b\u76fe\u724c\u7684\u9a0e\u58eb" },
+    positive: { en: "can inspire allies with one speech", zh: "\u80fd\u7528\u4e00\u5834\u6f14\u8aaa\u9f13\u821e\u968a\u53cb" },
+    negative: { en: "is afraid of loud noises", zh: "\u5bb3\u6015\u5f88\u5927\u7684\u8072\u97f3" },
+  },
+  invisible: {
+    target: { zh: "\u96b1\u5f62\u7684" },
+    character: { en: "an invisible chef", zh: "\u4e00\u4f4d\u96b1\u5f62\u5eda\u5e2b" },
+    positive: { en: "can sneak past any guard", zh: "\u53ef\u4ee5\u5077\u5077\u901a\u904e\u4efb\u4f55\u5b88\u885b" },
+    negative: { en: "leaves flour footprints everywhere", zh: "\u5230\u8655\u7559\u4e0b\u9eb5\u7c89\u8173\u5370" },
+  },
+  gravity: {
+    target: { zh: "\u91cd\u529b" },
+    character: { en: "a scientist carrying a moon rock", zh: "\u62ff\u8457\u6708\u7403\u77f3\u982d\u7684\u79d1\u5b78\u5bb6" },
+    positive: { en: "can change gravity for ten seconds", zh: "\u53ef\u4ee5\u6539\u8b8a\u91cd\u529b\u5341\u79d2\u9418" },
+    negative: { en: "floats away when surprised", zh: "\u53d7\u5230\u9a5a\u5687\u6642\u6703\u98c4\u8d70" },
+  },
+  strategy: {
+    target: { zh: "\u7b56\u7565" },
+    character: { en: "a chess coach in battle armor", zh: "\u7a7f\u8457\u6230\u7532\u7684\u897f\u6d0b\u68cb\u6559\u7df4" },
+    positive: { en: "predicts an enemy's next move", zh: "\u80fd\u9810\u6e2c\u6575\u4eba\u7684\u4e0b\u4e00\u6b65" },
+    negative: { en: "overthinks simple problems", zh: "\u6703\u628a\u7c21\u55ae\u554f\u984c\u60f3\u5f97\u592a\u8907\u96dc" },
+  },
+  weakness: {
+    target: { zh: "\u5f31\u9ede" },
+    character: { en: "a detective with a giant notebook", zh: "\u62ff\u8457\u5de8\u5927\u7b46\u8a18\u672c\u7684\u5075\u63a2" },
+    positive: { en: "finds a hidden weakness quickly", zh: "\u80fd\u5feb\u901f\u627e\u51fa\u96b1\u85cf\u5f31\u9ede" },
+    negative: { en: "announces every plan out loud", zh: "\u6703\u5927\u8072\u8aaa\u51fa\u6bcf\u500b\u8a08\u756b" },
+  },
+};
 const state = {
   step: 0,
   targetWords: [],
@@ -86,6 +138,7 @@ const state = {
   opponentIndex: 0,
   hands: {},
   picks: {},
+  fighterTranslationCorrect: {},
   translationSuccess: {},
   advantageDice: 0,
   earnedDice: 0,
@@ -106,6 +159,7 @@ const els = {
   targetWords: document.querySelector("#targetWords"),
   generateTable: document.querySelector("#generateTable"),
   sampleWords: document.querySelector("#sampleWords"),
+  fillSampleTable: document.querySelector("#fillSampleTable"),
   cardTableBody: document.querySelector("#cardTable tbody"),
   clearTable: document.querySelector("#clearTable"),
   saveCards: document.querySelector("#saveCards"),
@@ -116,12 +170,12 @@ const els = {
   opponentFighter: document.querySelector("#opponentFighter"),
   opponentName: document.querySelector("#opponentName"),
   translationModeLabel: document.querySelector("#translationModeLabel"),
-  translationChecks: document.querySelector("#translationChecks"),
   earnedDice: document.querySelector("#earnedDice"),
   advantageDice: document.querySelector("#advantageDice"),
   goFight: document.querySelector("#goFight"),
   fightDiceCount: document.querySelector("#fightDiceCount"),
   rollTotal: document.querySelector("#rollTotal"),
+  rollTargetDisplay: document.querySelector("#rollTargetDisplay"),
   diceResults: document.querySelector("#diceResults"),
   compensationArea: document.querySelector("#compensationArea"),
   missingPointsText: document.querySelector("#missingPointsText"),
@@ -129,11 +183,21 @@ const els = {
   compensationTasks: document.querySelector("#compensationTasks"),
   rollDice: document.querySelector("#rollDice"),
   finishOpponent: document.querySelector("#finishOpponent"),
+  defeatModal: document.querySelector("#defeatModal"),
+  defeatTitle: document.querySelector("#defeatTitle"),
+  defeatMessage: document.querySelector("#defeatMessage"),
+  compensationModal: document.querySelector("#compensationModal"),
+  compensationModalMessage: document.querySelector("#compensationModalMessage"),
+  startCompensation: document.querySelector("#startCompensation"),
+  fighterTranslationModal: document.querySelector("#fighterTranslationModal"),
+  fighterTranslationCards: document.querySelector("#fighterTranslationCards"),
+  continueAfterFighterTranslation: document.querySelector("#continueAfterFighterTranslation"),
   stepModal: document.querySelector("#stepModal"),
   modalStep: document.querySelector("#modalStep"),
   modalTitle: document.querySelector("#modalTitle"),
   modalDescription: document.querySelector("#modalDescription"),
   modalSettings: document.querySelector("#modalSettings"),
+  saveModalPreferences: document.querySelector("#saveModalPreferences"),
   openStepHelp: document.querySelector("#openStepHelp"),
   closeModal: document.querySelector("#closeModal"),
 };
@@ -164,8 +228,15 @@ function setStep(stepIndex, showModal = true) {
   });
   els.stepKicker.textContent = `Step ${stepIndex + 1}`;
   els.stepTitle.textContent = STEP_META[stepIndex].title;
+  updateRollTargetDisplay();
   updateOpponentProgress();
-  if (showModal) openStepModal(stepIndex);
+  if (showModal) {
+    if (stepIndex === 3 && pref(2, "cardContentLanguage") === "zh" && hasUnsuccessfulFighterTranslations()) {
+      showFighterTranslationModal();
+    } else {
+      openStepModal(stepIndex);
+    }
+  }
 }
 
 function canVisitStep(index) {
@@ -190,6 +261,7 @@ function openStepModal(stepIndex) {
     empty.textContent = "No preferences are needed for this step.";
     els.modalSettings.append(empty);
   }
+  els.saveModalPreferences.classList.toggle("hidden", !meta.settings.length);
 
   meta.settings.forEach((setting) => {
     const row = document.createElement("div");
@@ -217,7 +289,20 @@ function openStepModal(stepIndex) {
     input.id = `setting-${setting.key}`;
     input.dataset.settingKey = setting.key;
     input.value = pref(stepIndex, setting.key);
-    row.append(label, input);
+    if (setting.type === "range") {
+      const valueLabel = document.createElement("span");
+      valueLabel.className = "range-value";
+      valueLabel.textContent = input.value;
+      input.addEventListener("input", () => {
+        valueLabel.textContent = input.value;
+      });
+      const rangeWrap = document.createElement("div");
+      rangeWrap.className = "range-wrap";
+      rangeWrap.append(input, valueLabel);
+      row.append(label, rangeWrap);
+    } else {
+      row.append(label, input);
+    }
     els.modalSettings.append(row);
   });
 
@@ -295,7 +380,7 @@ function collectCards() {
   }
 
   const missing = rows.some((row) =>
-    CARD_TYPES.some(({ key }) => !row[key].en || !row[key].zh),
+    ALL_CARD_TYPES.some(({ key }) => !row[key].en || !row[key].zh),
   );
   if (missing) {
     alert("Please fill every English and Chinese card field before continuing.");
@@ -312,7 +397,7 @@ function drawHands() {
   state.hands = {};
   state.picks = {};
 
-  CARD_TYPES.forEach(({ key }) => {
+  FIGHTER_CARD_TYPES.forEach(({ key }) => {
     state.hands[key] = shuffle(state.cards).slice(0, handSize).map((row) => ({
       rowId: row.id,
       ...row[key],
@@ -324,7 +409,8 @@ function drawHands() {
 
 function renderFighterPicker() {
   els.fighterPicker.innerHTML = "";
-  CARD_TYPES.forEach(({ key, label }) => {
+  const language = pref(2, "cardContentLanguage");
+  FIGHTER_CARD_TYPES.forEach(({ key, label }) => {
     const column = document.createElement("div");
     column.className = "pick-column";
     const title = document.createElement("h4");
@@ -335,7 +421,7 @@ function renderFighterPicker() {
       const button = document.createElement("button");
       button.type = "button";
       button.className = `choice ${state.picks[key] === card.rowId ? "selected" : ""}`;
-      button.innerHTML = `<span>${escapeHtml(card.en)}</span><small>${escapeHtml(card.zh)}</small>`;
+      button.innerHTML = `<span>${escapeHtml(language === "zh" ? card.zh : card.en)}</span>`;
       button.addEventListener("click", () => {
         state.picks[key] = card.rowId;
         renderFighterPicker();
@@ -348,9 +434,10 @@ function renderFighterPicker() {
 
 function confirmFighter() {
   state.player = buildFighterFromPicks("Your Fighter", state.picks);
+  syncFighterTranslationState();
   const pools = {};
 
-  CARD_TYPES.forEach(({ key }) => {
+  FIGHTER_CARD_TYPES.forEach(({ key }) => {
     pools[key] = shuffle(
       state.cards
         .filter((row) => row.id !== state.picks[key])
@@ -359,7 +446,7 @@ function confirmFighter() {
   });
 
   const opponentCount = Math.max(0, state.targetWords.length - 1);
-  const possibleOpponentCount = Math.min(opponentCount, ...CARD_TYPES.map(({ key }) => pools[key].length));
+  const possibleOpponentCount = Math.min(opponentCount, ...FIGHTER_CARD_TYPES.map(({ key }) => pools[key].length));
 
   if (possibleOpponentCount < opponentCount) {
     alert(
@@ -369,7 +456,7 @@ function confirmFighter() {
 
   state.opponents = Array.from({ length: possibleOpponentCount }, (_, index) => {
     const fighter = { name: `Opponent ${index + 1}`, cards: {} };
-    CARD_TYPES.forEach(({ key }) => {
+    FIGHTER_CARD_TYPES.forEach(({ key }) => {
       fighter.cards[key] = pools[key].pop();
     });
     return fighter;
@@ -381,17 +468,96 @@ function confirmFighter() {
   }
 
   state.opponentIndex = 0;
-  startOpponent();
-  setStep(3);
+  if (pref(2, "cardContentLanguage") === "zh" && hasUnsuccessfulFighterTranslations()) {
+    showFighterTranslationModal();
+  } else {
+    continueAfterFighterTranslation();
+  }
+}
+
+function syncFighterTranslationState() {
+  const next = {};
+  FIGHTER_CARD_TYPES.forEach(({ key }) => {
+    const card = state.player.cards[key];
+    const id = fighterTranslationId(key, card);
+    next[id] = Boolean(state.fighterTranslationCorrect[id]);
+  });
+  state.fighterTranslationCorrect = next;
 }
 
 function buildFighterFromPicks(name, picks) {
   const fighter = { name, cards: {} };
-  CARD_TYPES.forEach(({ key }) => {
+  FIGHTER_CARD_TYPES.forEach(({ key }) => {
     const row = state.cards.find((item) => item.id === picks[key]);
     fighter.cards[key] = { rowId: row.id, ...row[key] };
   });
   return fighter;
+}
+
+function showFighterTranslationModal() {
+  els.fighterTranslationCards.innerHTML = "";
+
+  FIGHTER_CARD_TYPES.forEach(({ key, label }) => {
+    const card = state.player.cards[key];
+    const id = fighterTranslationId(key, card);
+    const item = document.createElement("div");
+    item.className = "card-item review-card";
+    item.innerHTML = `
+      <div>
+        <small>${label}</small>
+        <strong>${escapeHtml(card.zh)}</strong>
+      </div>
+      <div class="answer-key hidden">
+        <small>English answer</small>
+        <span>${escapeHtml(card.en)}</span>
+      </div>
+      <div class="review-actions">
+        <button class="ghost reveal-answer" type="button">Reveal answer</button>
+        <label class="success-toggle">
+          <span>Translated successfully</span>
+          <input type="checkbox" ${state.fighterTranslationCorrect[id] ? "checked" : ""}>
+        </label>
+      </div>
+    `;
+    const answerKey = item.querySelector(".answer-key");
+    const reveal = item.querySelector(".reveal-answer");
+    reveal.addEventListener("click", () => {
+      const hidden = answerKey.classList.toggle("hidden");
+      reveal.textContent = hidden ? "Reveal answer" : "Hide answer";
+    });
+    item.querySelector("input").addEventListener("change", (event) => {
+      state.fighterTranslationCorrect[id] = event.target.checked;
+    });
+    els.fighterTranslationCards.append(item);
+  });
+
+  if (typeof els.fighterTranslationModal.showModal === "function") {
+    els.fighterTranslationModal.showModal();
+  }
+}
+
+function continueAfterFighterTranslation() {
+  if (els.fighterTranslationModal.open) {
+    els.fighterTranslationModal.close();
+  }
+  if (state.step === 3 && hasUnsuccessfulFighterTranslations()) {
+    showFighterTranslationModal();
+    return;
+  }
+  startOpponent();
+  setStep(3);
+}
+
+function hasUnsuccessfulFighterTranslations() {
+  if (!state.player) return false;
+  return FIGHTER_CARD_TYPES.some(({ key }) => {
+    const card = state.player.cards[key];
+    return !state.fighterTranslationCorrect[fighterTranslationId(key, card)];
+  });
+}
+
+function fighterTranslationId(key, card) {
+  return `${key}-${card.rowId}`;
 }
 
 function startOpponent() {
@@ -402,88 +568,84 @@ function startOpponent() {
   state.missingPoints = 0;
   clearInterval(state.compensationTimer);
   renderBattle();
-  renderTranslationChecks();
   resetFightPanel();
 }
 
 function renderBattle() {
-  renderFighterCards(els.playerFighter, state.player);
-  renderFighterCards(els.opponentFighter, currentOpponent());
+  renderFighterCards(els.playerFighter, state.player, "Your");
+  renderFighterCards(els.opponentFighter, currentOpponent(), "Opponent");
   els.opponentName.textContent = currentOpponent()?.name || "Opponent";
+  renderTranslationGuidance();
+  updateEarnedDice();
   updateOpponentProgress();
 }
 
-function renderFighterCards(container, fighter) {
+function renderFighterCards(container, fighter, owner) {
   container.innerHTML = "";
   if (!fighter) return;
-  CARD_TYPES.forEach(({ key, label }) => {
+  const direction = pref(3, "translationDirection");
+  FIGHTER_CARD_TYPES.forEach(({ key, label }) => {
     const card = fighter.cards[key];
+    const checkId = `${owner}-${key}`;
+    const prompt = direction === "enToZh" ? card.en : card.zh;
+    const answer = direction === "enToZh" ? card.zh : card.en;
     const item = document.createElement("div");
-    item.className = "card-item";
-    item.innerHTML = `<small>${label}</small><strong>${escapeHtml(card.en)}</strong><span>${escapeHtml(card.zh)}</span>`;
+    item.className = "card-item review-card";
+    item.innerHTML = `
+      <div>
+        <small>${label}</small>
+        <strong>${escapeHtml(prompt)}</strong>
+      </div>
+      <div class="answer-key hidden" id="answer-${escapeHtml(checkId)}">
+        <small>Answer key</small>
+        <span>${escapeHtml(answer)}</span>
+      </div>
+      <div class="review-actions">
+        <button class="ghost reveal-answer" type="button">Reveal answer</button>
+        <label class="success-toggle">
+          <span>Translated successfully</span>
+          <input type="checkbox" ${state.translationSuccess[checkId] ? "checked" : ""}>
+        </label>
+      </div>
+    `;
+    const answerKey = item.querySelector(".answer-key");
+    const reveal = item.querySelector(".reveal-answer");
+    reveal.addEventListener("click", () => {
+      const hidden = answerKey.classList.toggle("hidden");
+      reveal.textContent = hidden ? "Reveal answer" : "Hide answer";
+    });
+    item.querySelector("input").addEventListener("change", (event) => {
+      state.translationSuccess[checkId] = event.target.checked;
+      updateEarnedDice();
+    });
     container.append(item);
   });
 }
 
-function renderTranslationChecks() {
+function renderTranslationGuidance() {
   const direction = pref(3, "translationDirection");
   els.translationModeLabel.textContent =
     direction === "enToZh"
       ? "Translate English cards into Chinese. Each success adds one die."
       : "Translate Chinese cards into English. Each success adds one die.";
-  els.translationChecks.innerHTML = "";
-
-  const cardsToCheck = [
-    ...cardsForChecks(state.player, "Your"),
-    ...cardsForChecks(currentOpponent(), "Opponent"),
-  ];
-
-  cardsToCheck.forEach((item, index) => {
-    const id = `check-${index}`;
-    const row = document.createElement("label");
-    row.className = "check-item";
-    const prompt = direction === "enToZh" ? item.card.en : item.card.zh;
-    const answer = direction === "enToZh" ? item.card.zh : item.card.en;
-    row.innerHTML = `<span><strong>${escapeHtml(item.owner)} ${escapeHtml(item.label)}</strong><br>${escapeHtml(prompt)} <small>(${escapeHtml(answer)})</small></span>`;
-    const checkbox = document.createElement("input");
-    checkbox.type = "checkbox";
-    checkbox.id = id;
-    checkbox.checked = Boolean(state.translationSuccess[id]);
-    checkbox.addEventListener("change", () => {
-      state.translationSuccess[id] = checkbox.checked;
-      updateEarnedDice();
-    });
-    row.append(checkbox);
-    els.translationChecks.append(row);
-  });
-  updateEarnedDice();
-}
-
-function cardsForChecks(fighter, owner) {
-  return CARD_TYPES.map(({ key, label }) => ({
-    owner,
-    label,
-    card: fighter.cards[key],
-  }));
 }
 
 function updateEarnedDice() {
   const translationDice = Object.values(state.translationSuccess).filter(Boolean).length;
-  state.advantageDice = Number(els.advantageDice.value) || 0;
+  state.advantageDice = els.advantageDice.checked ? 1 : 0;
   state.earnedDice = translationDice + state.advantageDice;
   els.earnedDice.textContent = state.earnedDice;
   els.fightDiceCount.textContent = state.earnedDice;
 }
 
 function resetFightPanel() {
-  els.advantageDice.value = "0";
-  els.fightDiceCount.textContent = "0";
+  updateEarnedDice();
   els.rollTotal.textContent = "Not rolled";
   els.diceResults.innerHTML = "";
   els.compensationArea.classList.add("hidden");
   els.compensationTasks.innerHTML = "";
-  els.finishOpponent.disabled = true;
   els.rollDice.disabled = false;
+  updateRollTargetDisplay();
   els.timerDisplay.textContent = pref(4, "timedCompensation") === "timed" ? `${pref(4, "timerSeconds")}s` : "Untimed";
 }
 
@@ -499,19 +661,33 @@ function rollFightDice() {
   els.rollTotal.textContent = state.rollTotal;
   els.diceResults.innerHTML = "";
   rolls.forEach((roll) => {
-    const die = document.createElement("div");
-    die.className = "die";
-    die.textContent = roll;
-    els.diceResults.append(die);
+    els.diceResults.append(renderDie(roll));
   });
 
-  state.missingPoints = Math.max(0, 11 - state.rollTotal);
+  const rollTarget = Number(pref(4, "rollTarget")) || 11;
+  state.missingPoints = Math.max(0, rollTarget - state.rollTotal);
   if (state.missingPoints === 0) {
     els.compensationArea.classList.add("hidden");
-    els.finishOpponent.disabled = false;
+    showDefeatModal("Initial roll victory", `You rolled ${state.rollTotal}, meeting the ${rollTarget}+ target.`);
   } else {
     renderCompensation();
+    showCompensationModal();
   }
+}
+
+function renderDie(value) {
+  const die = document.createElement("div");
+  die.className = `die die-${value}`;
+  die.setAttribute("aria-label", `Rolled ${value}`);
+  die.dataset.value = value;
+
+  for (let index = 0; index < value; index += 1) {
+    const pip = document.createElement("span");
+    pip.className = "pip";
+    die.append(pip);
+  }
+
+  return die;
 }
 
 function renderCompensation() {
@@ -519,25 +695,79 @@ function renderCompensation() {
   els.missingPointsText.textContent = `You need ${state.missingPoints} more point${state.missingPoints === 1 ? "" : "s"}. Complete that many extra target vocabulary translations.`;
   els.compensationTasks.innerHTML = "";
 
-  const tasks = Array.from({ length: state.missingPoints }, (_, index) => {
-    const shuffled = shuffle(state.cards);
-    return shuffled[index % shuffled.length];
-  });
+  const tasks = drawCompensationTasks(state.missingPoints);
+  const direction = pref(3, "translationDirection");
   tasks.forEach((row, index) => {
     const id = `comp-${index}`;
-    const label = document.createElement("label");
-    label.className = "check-item";
-    label.innerHTML = `<span><strong>${escapeHtml(row.target.en)}</strong><br><small>${escapeHtml(row.target.zh)}</small></span>`;
-    const checkbox = document.createElement("input");
-    checkbox.type = "checkbox";
-    checkbox.id = id;
-    checkbox.addEventListener("change", updateCompensationComplete);
-    label.append(checkbox);
-    els.compensationTasks.append(label);
+    const prompt = direction === "enToZh" ? row.target.en : row.target.zh;
+    const answer = direction === "enToZh" ? row.target.zh : row.target.en;
+    const item = document.createElement("div");
+    item.className = "check-item compensation-card";
+    item.innerHTML = `
+      <div class="compensation-content">
+        <span><strong>${escapeHtml(prompt)}</strong></span>
+        <div class="answer-key hidden">
+          <small>Answer key</small>
+          <span>${escapeHtml(answer)}</span>
+        </div>
+      </div>
+      <div class="review-actions">
+        <button class="ghost reveal-answer" type="button">Reveal answer</button>
+        <label class="success-toggle">
+          <span>Translated successfully</span>
+          <input type="checkbox" id="${id}">
+        </label>
+      </div>
+    `;
+    const answerKey = item.querySelector(".answer-key");
+    const reveal = item.querySelector(".reveal-answer");
+    reveal.addEventListener("click", () => {
+      const hidden = answerKey.classList.toggle("hidden");
+      reveal.textContent = hidden ? "Reveal answer" : "Hide answer";
+    });
+    item.querySelector("input").addEventListener("change", updateCompensationComplete);
+    els.compensationTasks.append(item);
   });
 
-  startCompensationTimer();
   updateCompensationComplete();
+}
+
+function showCompensationModal() {
+  const rollTarget = Number(pref(4, "rollTarget")) || 11;
+  els.compensationModalMessage.textContent = `You rolled ${state.rollTotal}. The target is ${rollTarget}+, so you are missing ${state.missingPoints} point${state.missingPoints === 1 ? "" : "s"}. Translate ${state.missingPoints} target word${state.missingPoints === 1 ? "" : "s"} successfully to compensate.`;
+  if (typeof els.compensationModal.showModal === "function") {
+    els.compensationModal.showModal();
+  }
+}
+
+function beginCompensation() {
+  if (els.compensationModal.open) {
+    els.compensationModal.close();
+  }
+  els.compensationArea.scrollIntoView({ behavior: "smooth", block: "start" });
+  startCompensationTimer();
+}
+
+function drawCompensationTasks(count) {
+  const tasks = [];
+  let pool = [];
+  let lastId = null;
+
+  while (tasks.length < count) {
+    if (!pool.length) {
+      pool = shuffle(state.cards);
+      if (pool.length > 1 && pool[0].id === lastId) {
+        const swapIndex = pool.findIndex((row) => row.id !== lastId);
+        [pool[0], pool[swapIndex]] = [pool[swapIndex], pool[0]];
+      }
+    }
+
+    const next = pool.shift();
+    tasks.push(next);
+    lastId = next.id;
+  }
+
+  return tasks;
 }
 
 function startCompensationTimer() {
@@ -564,11 +794,19 @@ function startCompensationTimer() {
 
 function updateCompensationComplete() {
   const checks = [...els.compensationTasks.querySelectorAll("input")];
-  els.finishOpponent.disabled = !checks.every((input) => input.checked);
+  if (checks.length && checks.every((input) => input.checked)) {
+    showDefeatModal(
+      "Compensation complete",
+      `You translated ${checks.length} extra target word${checks.length === 1 ? "" : "s"} and defeated ${currentOpponent().name}.`,
+    );
+  }
 }
 
 function finishOpponent() {
   clearInterval(state.compensationTimer);
+  if (els.defeatModal.open) {
+    els.defeatModal.close();
+  }
   if (state.opponentIndex < state.opponents.length - 1) {
     state.opponentIndex += 1;
     startOpponent();
@@ -578,8 +816,22 @@ function finishOpponent() {
 
   alert("All opponents defeated. Vocabulary review complete.");
   updateOpponentProgress(true);
-  els.finishOpponent.disabled = true;
   els.rollDice.disabled = true;
+}
+
+function showDefeatModal(title, message) {
+  clearInterval(state.compensationTimer);
+  els.defeatTitle.textContent = title;
+  els.defeatMessage.textContent = message;
+  els.finishOpponent.textContent =
+    state.opponentIndex < state.opponents.length - 1 ? "Next opponent" : "Finish game";
+  if (typeof els.defeatModal.showModal === "function" && !els.defeatModal.open) {
+    els.defeatModal.showModal();
+  }
+}
+
+function updateRollTargetDisplay() {
+  els.rollTargetDisplay.textContent = `${pref(4, "rollTarget")}+`;
 }
 
 function currentOpponent() {
@@ -604,7 +856,7 @@ function saveModalPreferences(event) {
   els.modalSettings.querySelectorAll("[data-setting-key]").forEach((input) => {
     const setting = STEP_META[state.step].settings.find((item) => item.key === input.dataset.settingKey);
     let value = input.value;
-    if (setting?.type === "number") {
+    if (setting?.type === "number" || setting?.type === "range") {
       value = clamp(Number(value) || setting.defaultValue, setting.min, setting.max);
     }
     stepPrefs[input.dataset.settingKey] = value;
@@ -614,8 +866,36 @@ function saveModalPreferences(event) {
   els.stepModal.close();
 
   if (state.step === 2 && state.cards.length) drawHands();
-  if (state.step === 3 && state.player) renderTranslationChecks();
+  if (state.step === 3 && state.player) renderBattle();
   if (state.step === 4) resetFightPanel();
+}
+
+function fillSampleTable() {
+  if (!state.targetWords.length) {
+    alert("Generate the target word table first.");
+    return;
+  }
+
+  state.targetWords.forEach((word, index) => {
+    const sample = SAMPLE_ROWS[word.toLowerCase()] || {
+      target: { zh: `${word} translation` },
+      character: { en: `a fighter who studies ${word}`, zh: `studies ${word}` },
+      positive: { en: `uses ${word} creatively`, zh: `uses ${word} creatively` },
+      negative: { en: `gets distracted by ${word}`, zh: `distracted by ${word}` },
+    };
+    setTableValue(index, "targetZh", sample.target.zh);
+    setTableValue(index, "characterEn", sample.character.en);
+    setTableValue(index, "characterZh", sample.character.zh);
+    setTableValue(index, "positiveEn", sample.positive.en);
+    setTableValue(index, "positiveZh", sample.positive.zh);
+    setTableValue(index, "negativeEn", sample.negative.en);
+    setTableValue(index, "negativeZh", sample.negative.zh);
+  });
+}
+
+function setTableValue(row, key, value) {
+  const input = els.cardTableBody.querySelector(`input[data-row="${row}"][data-key="${key}"]`);
+  if (input) input.value = value;
 }
 
 function clearEditableTable() {
@@ -654,13 +934,19 @@ els.generateTable.addEventListener("click", generateTable);
 els.sampleWords.addEventListener("click", () => {
   els.targetWords.value = "brave\ninvisible\ngravity\nstrategy\nweakness";
 });
+els.fillSampleTable.addEventListener("click", fillSampleTable);
 els.clearTable.addEventListener("click", clearEditableTable);
 els.saveCards.addEventListener("click", collectCards);
 els.reshuffleHands.addEventListener("click", drawHands);
 els.confirmFighter.addEventListener("click", confirmFighter);
+els.continueAfterFighterTranslation.addEventListener("click", continueAfterFighterTranslation);
 els.advantageDice.addEventListener("change", updateEarnedDice);
-els.goFight.addEventListener("click", () => setStep(4));
+els.goFight.addEventListener("click", () => {
+  updateEarnedDice();
+  setStep(4);
+});
 els.rollDice.addEventListener("click", rollFightDice);
+els.startCompensation.addEventListener("click", beginCompensation);
 els.finishOpponent.addEventListener("click", finishOpponent);
 els.openStepHelp.addEventListener("click", () => openStepModal(state.step));
 els.closeModal.addEventListener("click", () => els.stepModal.close());
@@ -670,3 +956,4 @@ els.stepTabs.forEach((tab) => {
 });
 
 setStep(0, true);
+

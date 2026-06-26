@@ -141,6 +141,7 @@ main {
 .topbar,
 .section-head,
 .actions,
+.inline-actions,
 .battle-layout,
 .fight-board {
   display: flex;
@@ -203,6 +204,11 @@ textarea {
   margin-top: 18px;
 }
 
+.inline-actions {
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
 .table-wrap {
   width: 100%;
   margin-top: 18px;
@@ -241,6 +247,7 @@ td input[readonly] {
 
 .fighter-grid,
 .card-stack,
+.modal-card-list,
 .check-list,
 .dice-results {
   display: grid;
@@ -313,6 +320,49 @@ td input[readonly] {
   margin-bottom: 4px;
 }
 
+.review-card {
+  display: grid;
+  gap: 12px;
+}
+
+.answer-key {
+  display: grid;
+  gap: 4px;
+  border-left: 3px solid var(--accent);
+  background: #eef8f5;
+  padding: 10px 12px;
+}
+
+.answer-key span {
+  font-weight: 800;
+}
+
+.review-actions,
+.success-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.review-actions {
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.review-actions button {
+  min-height: 36px;
+}
+
+.success-toggle {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.success-toggle input {
+  width: 22px;
+  height: 22px;
+}
+
 .compact {
   margin-top: 10px;
 }
@@ -348,6 +398,22 @@ td input[readonly] {
   font-weight: 700;
 }
 
+.checkbox-row {
+  grid-template-columns: 1fr auto;
+  align-items: center;
+}
+
+.checkbox-row input {
+  width: 24px;
+  height: 24px;
+}
+
+.checkbox-row small {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-weight: 600;
+}
+
 .fight-board {
   align-items: stretch;
   margin-bottom: 18px;
@@ -372,17 +438,77 @@ td input[readonly] {
 }
 
 .dice-results {
-  grid-template-columns: repeat(auto-fit, minmax(58px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(58px, 72px));
   margin-bottom: 18px;
 }
 
 .die {
-  display: grid;
-  min-height: 58px;
-  place-items: center;
+  position: relative;
+  width: 64px;
+  aspect-ratio: 1;
+  border: 3px solid var(--ink);
   background: #fff;
-  font-size: 24px;
-  font-weight: 900;
+  box-shadow: 0 4px 0 rgba(24, 33, 47, 0.16);
+}
+
+.pip {
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--ink);
+}
+
+.die-1 .pip:nth-child(1),
+.die-3 .pip:nth-child(2),
+.die-5 .pip:nth-child(3) {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.die-2 .pip:nth-child(1),
+.die-3 .pip:nth-child(1),
+.die-4 .pip:nth-child(1),
+.die-5 .pip:nth-child(1),
+.die-6 .pip:nth-child(1) {
+  top: 13px;
+  left: 13px;
+}
+
+.die-2 .pip:nth-child(2),
+.die-3 .pip:nth-child(3),
+.die-4 .pip:nth-child(4),
+.die-5 .pip:nth-child(5),
+.die-6 .pip:nth-child(6) {
+  right: 13px;
+  bottom: 13px;
+}
+
+.die-4 .pip:nth-child(2),
+.die-5 .pip:nth-child(2),
+.die-6 .pip:nth-child(2) {
+  top: 13px;
+  right: 13px;
+}
+
+.die-4 .pip:nth-child(3),
+.die-5 .pip:nth-child(4),
+.die-6 .pip:nth-child(5) {
+  bottom: 13px;
+  left: 13px;
+}
+
+.die-6 .pip:nth-child(3) {
+  top: 50%;
+  left: 13px;
+  transform: translateY(-50%);
+}
+
+.die-6 .pip:nth-child(4) {
+  top: 50%;
+  right: 13px;
+  transform: translateY(-50%);
 }
 
 .compensation {
@@ -419,6 +545,18 @@ dialog::backdrop {
   margin-top: 18px;
 }
 
+.range-wrap {
+  display: grid;
+  grid-template-columns: 1fr 42px;
+  gap: 10px;
+  align-items: center;
+}
+
+.range-value {
+  font-weight: 900;
+  text-align: right;
+}
+
 .setting-row {
   display: grid;
   grid-template-columns: 1fr minmax(150px, 220px);
@@ -428,6 +566,15 @@ dialog::backdrop {
 
 .setting-row label {
   font-weight: 700;
+}
+
+.compensation-card {
+  align-items: stretch;
+}
+
+.compensation-content {
+  display: grid;
+  gap: 10px;
 }
 
 @media (max-width: 920px) {
@@ -447,7 +594,8 @@ dialog::backdrop {
   .battle-layout,
   .fight-board,
   .topbar,
-  .section-head {
+  .section-head,
+  .inline-actions {
     display: grid;
     grid-template-columns: 1fr;
   }

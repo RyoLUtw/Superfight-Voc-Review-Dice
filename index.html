@@ -70,7 +70,10 @@
               <h3>Custom Card Table</h3>
               <p>Fill the English and Chinese card content. Target word English is filled automatically.</p>
             </div>
-            <button class="ghost" id="clearTable" type="button">Clear editable cards</button>
+            <div class="inline-actions">
+              <button class="ghost" id="fillSampleTable" type="button">Fill with sample content</button>
+              <button class="ghost" id="clearTable" type="button">Clear editable cards</button>
+            </div>
           </div>
           <div class="table-wrap">
             <table id="cardTable">
@@ -122,19 +125,14 @@
           <div class="section-head compact">
             <div>
               <h3>Earn Dice</h3>
-              <p id="translationModeLabel">Mark each successful translation to add one die.</p>
+              <p id="translationModeLabel">Use each fighter card to translate and earn dice.</p>
             </div>
             <div class="dice-pill"><span id="earnedDice">0</span> dice</div>
           </div>
-          <div id="translationChecks" class="check-list"></div>
-          <label class="field-row">
-            Advantage explanation score
-            <select id="advantageDice">
-              <option value="0">No dice</option>
-              <option value="1">1 die</option>
-              <option value="2">2 dice</option>
-              <option value="3">3 dice</option>
-            </select>
+          <label class="field-row checkbox-row">
+            <span>Successful advantage explanation</span>
+            <input id="advantageDice" type="checkbox" />
+            <small>Checked adds 1 extra die.</small>
           </label>
           <div class="actions">
             <button id="goFight" type="button">Roll fight dice</button>
@@ -145,7 +143,7 @@
           <div class="fight-board">
             <div>
               <p class="muted">Roll target</p>
-              <strong class="target-score">11+</strong>
+              <strong class="target-score" id="rollTargetDisplay">11+</strong>
             </div>
             <div>
               <p class="muted">Dice available</p>
@@ -169,7 +167,6 @@
           </div>
           <div class="actions">
             <button id="rollDice" type="button">Roll dice</button>
-            <button id="finishOpponent" type="button" disabled>Finish opponent</button>
           </div>
         </section>
       </main>
@@ -185,7 +182,47 @@
         <div id="modalSettings" class="modal-settings"></div>
         <div class="actions">
           <button class="ghost" value="cancel" type="button" id="closeModal">Close</button>
-          <button value="default" type="submit">Save preferences</button>
+          <button value="default" type="submit" id="saveModalPreferences">Save preferences</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="defeatModal">
+      <form method="dialog" class="modal-card">
+        <div>
+          <p class="eyebrow">Opponent defeated</p>
+          <h2 id="defeatTitle">Victory</h2>
+          <p id="defeatMessage"></p>
+        </div>
+        <div class="actions">
+          <button id="finishOpponent" type="button">Continue</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="compensationModal">
+      <form method="dialog" class="modal-card">
+        <div>
+          <p class="eyebrow">Compensation needed</p>
+          <h2>Translate target words</h2>
+          <p id="compensationModalMessage"></p>
+        </div>
+        <div class="actions">
+          <button id="startCompensation" type="button">Start compensation</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="fighterTranslationModal">
+      <form method="dialog" class="modal-card">
+        <div>
+          <p class="eyebrow">Fighter translation</p>
+          <h2>Translate your selected cards</h2>
+          <p>Review the Chinese cards you picked and translate them into English before continuing.</p>
+        </div>
+        <div id="fighterTranslationCards" class="modal-card-list"></div>
+        <div class="actions">
+          <button id="continueAfterFighterTranslation" type="button">Continue</button>
         </div>
       </form>
     </dialog>
